@@ -1,0 +1,14 @@
+{
+  "auth_mode": "key",
+  "auth_key": "NDM5ZDk1YWYtYTEzZC00NDI1LThkMTEtMGU4MTU0MzUxZTQ1OjIyZmUwZjJjLWM5MGMtNDBhNy05ZDZmLTAyZDBiNzYzY2Q0NQ==",
+  "cert_file": "",
+  "key_file": "",
+  "ca_file": "",
+  "scope": "GIGACHAT_API_PERS",
+  "model": "GigaChat-2-Max",
+  "temperature": 0.7,
+  "ocr_enabled": true,
+  "ocr_engine": "rapidocr",
+  "ocr_lang": "rus+eng",
+  "system_prompt": "Ты — помощник для создания FAQ. Преобразуй предоставленные данные из таблицы в читаемый текст в формате вопрос-ответ. Сохраняй всю информацию, ничего не пропускай."
+}

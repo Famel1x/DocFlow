@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocuFlow AI • Парсер документов в FAQ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- Фоновые неоновые световые акценты (Glow Orbs) -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div class="bg-glow bg-glow-3"></div>
+
+    <div class="app-layout">
+        <!-- ═══ Верхняя панель (Navbar) ═══ -->
+        <header class="top-navbar">
+            <div class="brand-badge">
+                <div class="brand-logo-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                </div>
+                <span class="brand-name">DocuFlow<span class="brand-accent">.ai</span></span>
+                <span class="version-tag">PRO</span>
+            </div>
+
+            <div class="nav-center-actions">
+                <input type="file" id="file-input" multiple accept=".pdf,.docx,.pptx,.xlsx" hidden>
+                <input type="file" id="folder-input" webkitdirectory directory multiple hidden>
+                
+                <button class="glass-btn primary" onclick="document.getElementById('file-input').click()">
+                    <span class="btn-icon">📄</span> Загрузить файлы
+                </button>
+                <button class="glass-btn secondary" onclick="document.getElementById('folder-input').click()">
+                    <span class="btn-icon">📁</span> Загрузить папку
+                </button>
+                <button class="glass-btn success hidden" id="download-converted-btn" title="Все таблицы преобразованы! Нажмите для скачивания документа">
+                    <span class="btn-icon">⚡</span> Скачать итоговый документ
+                </button>
+            </div>
+
+            <div class="nav-right-controls">
+                <button class="icon-glass-btn" id="settings-btn" title="Настройки API GigaChat">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                </button>
+                <label class="theme-toggle-switch" title="Переключить тему">
+                    <input type="checkbox" id="theme-checkbox" checked>
+                    <span class="theme-switch-knob"></span>
+                </label>
+            </div>
+        </header>
+
+        <!-- ═══ Панель открытых файлов (Tab Bar) ═══ -->
+        <div class="file-workspace-bar">
+            <div class="file-tabs-scroll" id="file-tabs">
+                <span class="file-bar-placeholder">
+                    <span class="dot-indicator"></span> Перетащите файлы в рабочую область или воспользуйтесь кнопкой загрузки
+                </span>
+            </div>
+        </div>
+
+        <!-- ═══ Главная рабочая область ═══ -->
+        <main class="main-viewport" id="workspace">
+            <!-- Экран пустого состояния (Drag & Drop Zone) -->
+            <div class="empty-state-canvas" id="empty-state">
+                <div class="modern-drop-card" id="drop-zone">
+                    <div class="drop-illustration">
+                        <div class="pulse-ring ring-1"></div>
+                        <div class="pulse-ring ring-2"></div>
+                        <div class="drop-center-icon">📥</div>
+                    </div>
+                    <h2>Перетащите документы сюда</h2>
+                    <p>Поддерживаются форматы <b>PDF, DOCX, PPTX, XLSX</b> с многоуровневыми и объединенными таблицами</p>
+                    <div class="supported-formats-pills">
+                        <span class="pill-format pdf">PDF</span>
+                        <span class="pill-format docx">DOCX</span>
+                        <span class="pill-format pptx">PPTX</span>
+                        <span class="pill-format xlsx">XLSX</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Разделенный вид: Слева Таблица / Справа Инструменты -->
+            <div class="split-view hidden" id="work-area">
+                <!-- ЛЕВАЯ ПАНЕЛЬ: Интерактивная таблица -->
+                <section class="glass-card panel-table-card">
+                    <div class="card-header">
+                        <div class="table-info-meta">
+                            <span class="section-indicator"></span>
+                            <h3 id="table-title">Документ</h3>
+                        </div>
+                        <div class="table-stepper">
+                            <button class="mini-btn danger-outline" id="reset-table-btn" title="Сбросить таблицу к исходному виду из файла">
+                                ↺ Сбросить к оригиналу
+                            </button>
+                            <button class="mini-btn success-outline" id="save-table-edits-btn" style="display: none;" title="Сохранить изменения в ячейках таблицы">
+                                💾 Сохранить ячейки
+                            </button>
+                            <button class="icon-nav-btn" id="prev-table" disabled title="Предыдущая таблица">
+                                ❮
+                            </button>
+                            <span class="counter-badge" id="table-counter">0 / 0</span>
+                            <button class="icon-nav-btn" id="next-table" disabled title="Следующая таблица">
+                                ❯
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Тулбар редактирования структуры таблицы (строки/столбцы/OCR правки/объединение) -->
+                    <div class="table-editor-toolbar" id="table-toolbar">
+                        <div class="toolbar-group">
+                            <span class="toolbar-label">Строки:</span>
+                            <button type="button" class="tool-btn" id="btn-add-row" title="Добавить строку в конец таблицы">+ Строка</button>
+                            <button type="button" class="tool-btn" id="btn-insert-row-after" title="Вставить строку под выбранной ячейкой">+ Ниже</button>
+                            <button type="button" class="tool-btn danger" id="btn-del-row" title="Удалить выбранную строку">✕ Строка</button>
+                            <button type="button" class="tool-btn" id="btn-move-row-up" title="Переместить выбранную строку выше">↑</button>
+                            <button type="button" class="tool-btn" id="btn-move-row-down" title="Переместить выбранную строку ниже">↓</button>
+                        </div>
+                        <div class="toolbar-separator"></div>
+                        <div class="toolbar-group">
+                            <span class="toolbar-label">Столбцы:</span>
+                            <button type="button" class="tool-btn" id="btn-add-col" title="Добавить столбец справа">+ Столбец</button>
+                            <button type="button" class="tool-btn" id="btn-insert-col-after" title="Вставить столбец справа от выбранного">+ Справа</button>
+                            <button type="button" class="tool-btn danger" id="btn-del-col" title="Удалить выбранный столбец">✕ Столбец</button>
+                            <button type="button" class="tool-btn" id="btn-move-col-left" title="Переместить выбранный столбец влево">←</button>
+                            <button type="button" class="tool-btn" id="btn-move-col-right" title="Переместить выбранный столбец вправо">→</button>
+                        </div>
+                        <div class="toolbar-separator"></div>
+                        <div class="toolbar-group">
+                            <span class="toolbar-label">Объединение:</span>
+                            <button type="button" class="tool-btn accent" id="btn-merge-right" title="Объединить выбранную ячейку со следующей справа">⇥ Вправо</button>
+                            <button type="button" class="tool-btn accent" id="btn-merge-down" title="Объединить выбранную ячейку со следующей снизу">⇣ Вниз</button>
+                            <button type="button" class="tool-btn" id="btn-split-cell" title="Разъединить объединение выбранной ячейки">⧉ Разъединить</button>
+                        </div>
+                    </div>
+
+
+                    <div class="card-body table-viewport" id="table-view">
+                        <p class="muted-placeholder">Загрузка таблицы...</p>
+                    </div>
+
+                    <div class="card-footer-tip">
+                        💡 <b>Подсказка:</b> Ячейки таблицы интерактивны. Нажмите на любой текст для быстрого редактирования перед генерацией.
+                    </div>
+                </section>
+
+                <!-- ПРАВАЯ ПАНЕЛЬ: Правила, Превью и LLM -->
+                <section class="glass-card panel-editor-card">
+                    <!-- Блок правил парсинга -->
+                    <div class="editor-block rules-block">
+                        <div class="block-header">
+                            <h4>ПРАВИЛА ЧТЕНИЯ ТАБЛИЦЫ</h4>
+                            <button type="button" class="mini-btn accent" id="open-rules-modal-btn">
+                                📖 Справка и примеры
+                            </button>
+                        </div>
+
+                        <div class="input-glow-wrapper">
+                            <textarea id="rules-input" class="modern-textarea mono" placeholder="Введите шаблон, например: Вопрос: {0} — Ответ: {1}" rows="3"></textarea>
+                        </div>
+
+                        <button class="action-submit-btn" id="apply-rules-btn">
+                            <span class="btn-sparkle">✨</span> Применить правила преобразования
+                        </button>
+                    </div>
+
+                    <!-- Блок превью строк -->
+                    <div class="editor-block preview-block">
+                        <div class="block-header">
+                            <h4>ПРЕВЬЮ СТРОК ДЛЯ LLM</h4>
+                            <div class="block-actions">
+                                <button class="mini-btn accent" id="save-preview-as-converted-btn" disabled title="Зафиксировать текст превью для этой таблицы">
+                                    💾 В документ
+                                </button>
+                                <button class="mini-btn primary" id="send-to-llm-btn" disabled>
+                                    🤖 В GigaChat
+                                </button>
+                            </div>
+                        </div>
+                        <div class="input-glow-wrapper">
+                            <textarea id="transform-preview-edit" class="modern-textarea mono" placeholder="Результат применения правил появится здесь... Доступно для ручной правки." rows="4"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Блок генерации GigaChat -->
+                    <div class="editor-block llm-block">
+                        <div class="block-header">
+                            <h4>ГОТОВЫЙ FAQ (ОТВЕТ GIGACHAT)</h4>
+                            <div class="block-actions">
+                                <button class="mini-btn accent" id="save-llm-as-converted-btn" style="display: none;" title="Зафиксировать ответ LLM для этой таблицы">
+                                    💾 В документ
+                                </button>
+                                <button class="mini-btn secondary" id="copy-result-btn" style="display: none;">
+                                    📋 Копировать
+                                </button>
+                            </div>
+                        </div>
+                        <div class="input-glow-wrapper">
+                            <textarea id="llm-result-edit" class="modern-textarea" placeholder="Сгенерированный структурированный FAQ появится здесь..." rows="5"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Статус конвертации таблицы -->
+                    <div id="table-converted-status" class="status-callout-pill" style="display: none;">
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- ═══ Модальное окно настроек (Glass Modal) ═══ -->
+    <div class="modal-backdrop hidden" id="settings-modal">
+        <div class="glass-modal-card">
+            <div class="modal-card-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-icon-shield">⚙️</span>
+                    <h3>Настройки системы</h3>
+                </div>
+                <button class="close-modal-icon-btn" id="close-settings">✕</button>
+            </div>
+
+            <!-- Вкладки настроек -->
+            <div class="settings-tabs-bar">
+                <button type="button" class="settings-tab-btn active" data-tab="auth">🔑 Авторизация Сбера</button>
+                <button type="button" class="settings-tab-btn" data-tab="model">🤖 Модель и Промпт</button>
+                <button type="button" class="settings-tab-btn" data-tab="ocr">🔍 Сканы и OCR</button>
+            </div>
+
+            <div class="modal-card-body">
+                <!-- Вкладка 1: Авторизация -->
+                <div class="settings-tab-content active" id="settings-tab-auth">
+                    <div class="field-item">
+                        <label class="field-label">Метод авторизации</label>
+                        <div class="modern-segmented-control" id="auth-mode-switch">
+                            <button type="button" class="segmented-option active" data-mode="key">🔑 По ключу (Secret Key)</button>
+                            <button type="button" class="segmented-option" data-mode="cert">📜 Сертификаты Минцифры / mTLS</button>
+                        </div>
+                    </div>
+
+                    <div id="auth-key-fields">
+                        <div class="field-item">
+                            <label class="field-label" for="auth-key">Authorization Key (Client Secret)</label>
+                            <div class="input-glow-wrapper">
+                                <input type="password" id="auth-key" class="modern-input" placeholder="Вставьте ключ из личного кабинета Сбера">
+                            </div>
+                            <small class="field-hint">Ключ можно получить в кабинете <a href="https://developers.sber.ru/studio/workspaces" target="_blank" rel="noopener">developers.sber.ru</a></small>
+                        </div>
+                    </div>
+
+                    <div id="auth-cert-fields" class="hidden">
+                        <div class="field-item">
+                            <label class="field-label" for="ca-file">Корневой сертификат Минцифры (Russian Trusted CA)</label>
+                            <div class="input-glow-wrapper">
+                                <input type="text" id="ca-file" class="modern-input mono" placeholder="C:\certs\russian_trusted_root_ca.cer">
+                            </div>
+                            <small class="field-hint">Официальный сертификат для доверенной SSL-валидации.</small>
+                        </div>
+                        <div class="field-item">
+                            <label class="field-label" for="cert-file">Клиентский сертификат (.crt / .pem)</label>
+                            <div class="input-glow-wrapper">
+                                <input type="text" id="cert-file" class="modern-input mono" placeholder="C:\certs\client_cert.pem">
+                            </div>
+                        </div>
+                        <div class="field-item">
+                            <label class="field-label" for="key-file">Приватный ключ клиентского сертификата (.key / .pem)</label>
+                            <div class="input-glow-wrapper">
+                                <input type="text" id="key-file" class="modern-input mono" placeholder="C:\certs\client_key.pem">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field-item">
+                        <label class="field-label" for="scope-select">Область доступа (Scope)</label>
+                        <select id="scope-select" class="modern-select">
+                            <option value="GIGACHAT_API_PERS">GIGACHAT_API_PERS (Физические лица)</option>
+                            <option value="GIGACHAT_API_B2B">GIGACHAT_API_B2B (Индивидуальные предприниматели)</option>
+                            <option value="GIGACHAT_API_CORP">GIGACHAT_API_CORP (Юридические лица)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Вкладка 2: Модель и Промпт -->
+                <div class="settings-tab-content hidden" id="settings-tab-model">
+                    <div class="field-item">
+                        <label class="field-label" for="model-select">Выбор модели GigaChat</label>
+                        <select id="model-select" class="modern-select">
+                            <optgroup label="Поколение GigaChat 2">
+                                <option value="GigaChat-2-Max">GigaChat 2 Max (флагман)</option>
+                                <option value="GigaChat-2-Pro">GigaChat 2 Pro (высокая точность)</option>
+                                <option value="GigaChat-2">GigaChat 2 (базовая)</option>
+                                <option value="GigaChat-2-Lite">GigaChat 2 Lite (быстрая / легкая)</option>
+                            </optgroup>
+                            <optgroup label="Флагманы и специальные">
+                                <option value="GigaChat-Max">GigaChat Max</option>
+                                <option value="GigaChat-Ultra">GigaChat Ultra</option>
+                            </optgroup>
+                            <optgroup label="Классическая линейка">
+                                <option value="GigaChat-Pro">GigaChat Pro</option>
+                                <option value="GigaChat-Plus">GigaChat Plus</option>
+                                <option value="GigaChat" selected>GigaChat (стандартная)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="field-item">
+                        <div class="range-header">
+                            <label class="field-label" for="temperature">Температура креативности</label>
+                            <span class="range-value-pill" id="temp-value">0.70</span>
+                        </div>
+                        <input type="range" id="temperature" min="0" max="1" step="0.05" value="0.7" class="modern-slider">
+                    </div>
+
+                    <div class="field-item">
+                        <label class="field-label" for="system-prompt">Системный промпт для FAQ</label>
+                        <div class="input-glow-wrapper">
+                            <textarea id="system-prompt" class="modern-textarea" rows="4" placeholder="Инструкция для LLM при формировании вопрос-ответ..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вкладка 3: Сканы и OCR -->
+                <div class="settings-tab-content hidden" id="settings-tab-ocr">
+                    <div class="field-item">
+                        <label class="field-label" for="ocr-engine-select">Движок оптического распознавания</label>
+                        <select id="ocr-engine-select" class="modern-select">
+                            <option value="rapidocr" selected>⚡ RapidOCR — мгновенный ONNX инференс (рекомендуется)</option>
+                            <option value="easyocr">🧠 EasyOCR — глубокие нейросети PyTorch (для сложных шрифтов)</option>
+                            <option value="tesseract">🏛️ Tesseract OCR — классический движок</option>
+                        </select>
+                        <small class="field-hint">Вы можете свободно переключать движок в зависимости от качества сканов.</small>
+                    </div>
+
+                    <div class="field-item">
+                        <label class="field-label" for="ocr-lang-select">Языковой профиль документов</label>
+                        <select id="ocr-lang-select" class="modern-select">
+                            <option value="rus+eng" selected>🇷🇺 🇬🇧 Русский + Английский (смешанный)</option>
+                            <option value="rus">🇷🇺 Только Русский</option>
+                            <option value="eng">🇬🇧 Только Английский</option>
+                        </select>
+                    </div>
+
+                    <div class="field-item" style="margin-top: 0.5rem; padding: 0.75rem; background: rgba(255,255,255,0.02); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                        <div style="display:flex; align-items:center; gap:0.6rem;">
+                            <input type="checkbox" id="ocr-enabled" checked style="accent-color:var(--accent-cyan); width:18px; height:18px; cursor:pointer;">
+                            <label for="ocr-enabled" style="font-size:0.85rem; font-weight:600; color:var(--text-main); cursor:pointer;">Автораспознавание сканированных PDF</label>
+                        </div>
+                        <small class="field-hint" style="margin-top:0.3rem; display:block;">Если в файле отсутствует текстовый слой, сервис автоматически прогонит страницы через выбранный OCR и восстановит сетку таблиц.</small>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="modal-card-footer">
+                <button class="glass-btn primary" id="save-settings-btn">
+                    💾 Сохранить настройки
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Поп-ап окно: Полное руководство по синтаксису правил ═══ -->
+    <div class="modal-backdrop hidden" id="rules-guide-modal">
+        <div class="glass-modal-card wide-modal">
+            <div class="modal-card-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-icon-shield">📚</span>
+                    <h3>Справочник синтаксиса и примеры правил</h3>
+                </div>
+                <button class="close-modal-icon-btn" id="close-rules-modal">✕</button>
+            </div>
+
+            <div class="modal-card-body guide-modal-body">
+                <div class="guide-tabs-bar">
+                    <button type="button" class="guide-tab-btn active" data-tab="modes">Режимы обхода (@mode)</button>
+                    <button type="button" class="guide-tab-btn" data-tab="directives">Все директивы (@)</button>
+                    <button type="button" class="guide-tab-btn" data-tab="vars">Переменные ({...})</button>
+                    <button type="button" class="guide-tab-btn" data-tab="examples">Готовые примеры</button>
+                </div>
+
+                <!-- Вкладка 1: Режимы -->
+                <div class="guide-content-panel active" id="tab-modes">
+                    <div class="guide-grid-cards">
+                        <div class="guide-info-card">
+                            <div class="card-tag">По умолчанию</div>
+                            <h4>@mode row</h4>
+                            <p>Построчный обход стандартных списков. Каждая строка данных формирует один элемент FAQ.</p>
+                            <pre class="code-snippet">@mode row
+@skip_empty
+Вопрос: {0}. Ответ: {1}</pre>
+                            <button type="button" class="mini-btn copy-rule-template" data-template="@mode row&#10;@skip_empty&#10;Вопрос: {0}. Ответ: {1}">📋 Вставить в правила</button>
+                        </div>
+
+                        <div class="guide-info-card">
+                            <div class="card-tag accent">Объединенные ячейки</div>
+                            <h4>@mode group</h4>
+                            <p>Группировка строк по объединенному столбцу (например, категория товаров или фаза проекта).</p>
+                            <pre class="code-snippet">@mode group
+@group_by 0
+@merge_repeated
+Товар: {1} | Цена: {2}</pre>
+                            <button type="button" class="mini-btn copy-rule-template" data-template="@mode group&#10;@group_by 0&#10;@merge_repeated&#10;Товар: {1} | Цена: {2}">📋 Вставить в правила</button>
+                        </div>
+
+                        <div class="guide-info-card">
+                            <div class="card-tag cyan">Матрицы и права</div>
+                            <h4>@mode matrix</h4>
+                            <p>Перекрестная таблица (строка × столбец). Для прав доступа, тарифов, расписаний.</p>
+                            <pre class="code-snippet">@mode matrix
+@header_cols 1
+Для роли "{_row_header}" доступ к "{_col_header}": {_value}</pre>
+                            <button type="button" class="mini-btn copy-rule-template" data-template="@mode matrix&#10;@header_cols 1&#10;Для роли &quot;{_row_header}&quot; доступ к &quot;{_col_header}&quot;: {_value}">📋 Вставить в правила</button>
+                        </div>
+
+                        <div class="guide-info-card">
+                            <div class="card-tag">Ключ-значение</div>
+                            <h4>@mode kv</h4>
+                            <p>Для карточек товаров и спецификаций, где колонка 0 — параметр, колонка 1 — значение.</p>
+                            <pre class="code-snippet">@mode kv
+Параметр {_key}: {_value}</pre>
+                            <button type="button" class="mini-btn copy-rule-template" data-template="@mode kv&#10;Параметр {_key}: {_value}">📋 Вставить в правила</button>
+                        </div>
+
+                        <div class="guide-info-card">
+                            <div class="card-tag">По колонкам</div>
+                            <h4>@mode column</h4>
+                            <p>Чтение таблицы сверху-вниз по вертикальным колонкам.</p>
+                            <pre class="code-snippet">@mode column
+@separator , 
+Поле "{_header}": {_values}</pre>
+                            <button type="button" class="mini-btn copy-rule-template" data-template="@mode column&#10;@separator , &#10;Поле &quot;{_header}&quot;: {_values}">📋 Вставить в правила</button>
+                        </div>
+
+                        <div class="guide-info-card">
+                            <div class="card-tag">Сплошной поток</div>
+                            <h4>@mode flat</h4>
+                            <p>Извлекает все непустые ячейки подряд через разделитель для общего текстового контекста.</p>
+                            <pre class="code-snippet">@mode flat
+@separator ; </pre>
+                            <button type="button" class="mini-btn copy-rule-template" data-template="@mode flat&#10;@separator ; ">📋 Вставить в правила</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вкладка 2: Директивы -->
+                <div class="guide-content-panel hidden" id="tab-directives">
+                    <table class="guide-table">
+                        <thead>
+                            <tr>
+                                <th>Директива</th>
+                                <th>Пример</th>
+                                <th>Описание</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>@header_rows N</code></td>
+                                <td><code>@header_rows 2</code></td>
+                                <td>Количество строк шапки. При $N > 1$ заголовки объединяются через <code> > </code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>@header_cols N</code></td>
+                                <td><code>@header_cols 1</code></td>
+                                <td>Количество столбцов-заголовков строк слева (используется в <code>@mode matrix</code>).</td>
+                            </tr>
+                            <tr>
+                                <td><code>@group_by N</code></td>
+                                <td><code>@group_by 0</code></td>
+                                <td>Номер колонки или имя заголовка для группировки в <code>@mode group</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>@merge_repeated</code></td>
+                                <td><code>@merge_repeated</code></td>
+                                <td>Автоматически объединять повторяющиеся и объединенные ячейки в группе.</td>
+                            </tr>
+                            <tr>
+                                <td><code>@skip_empty</code></td>
+                                <td><code>@skip_empty</code></td>
+                                <td>Игнорировать полностью пустые строки и ячейки.</td>
+                            </tr>
+                            <tr>
+                                <td><code>@separator TEXT</code></td>
+                                <td><code>@separator ; </code></td>
+                                <td>Разделитель ячеек при объединении по умолчанию.</td>
+                            </tr>
+                            <tr>
+                                <td><code>@enumerate</code></td>
+                                <td><code>@enumerate</code></td>
+                                <td>Добавить автоматическую нумерацию строк (1., 2., 3...).</td>
+                            </tr>
+                            <tr>
+                                <td><code>@prefix TEXT</code></td>
+                                <td><code>@prefix [FAQ] </code></td>
+                                <td>Добавить префикс к каждой сформированной строке.</td>
+                            </tr>
+                            <tr>
+                                <td><code>@data_rows N:M</code></td>
+                                <td><code>@data_rows 1:10</code></td>
+                                <td>Ограничить диапазон обрабатываемых строк данных (с 1 по 10).</td>
+                            </tr>
+                            <tr>
+                                <td><code>@data_cols N:M</code></td>
+                                <td><code>@data_cols 0:3</code></td>
+                                <td>Ограничить диапазон обрабатываемых колонок (с 0 по 3).</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Вкладка 3: Переменные -->
+                <div class="guide-content-panel hidden" id="tab-vars">
+                    <table class="guide-table">
+                        <thead>
+                            <tr>
+                                <th>Переменная</th>
+                                <th>Где доступна</th>
+                                <th>Значение</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>{0}, {1}, {2}...</code></td>
+                                <td>Все режимы</td>
+                                <td>Значение ячейки по индексу колонки (0 — первая колонка).</td>
+                            </tr>
+                            <tr>
+                                <td><code>{ИмяЗаголовка}</code></td>
+                                <td>Все режимы</td>
+                                <td>Значение ячейки по точному совпадению с текстом в шапке таблицы.</td>
+                            </tr>
+                            <tr>
+                                <td><code>{_row}</code></td>
+                                <td><code>row</code>, <code>group</code></td>
+                                <td>Порядковый номер строки данных (начиная с 1).</td>
+                            </tr>
+                            <tr>
+                                <td><code>{_group}</code></td>
+                                <td><code>group</code></td>
+                                <td>Название текущей группы категорий.</td>
+                            </tr>
+                            <tr>
+                                <td><code>{_all}</code></td>
+                                <td><code>row</code>, <code>group</code></td>
+                                <td>Все заполненные ячейки строки через разделитель <code>@separator</code>.</td>
+                            </tr>
+                            <tr>
+                                <td><code>{_row_header}</code></td>
+                                <td><code>matrix</code></td>
+                                <td>Заголовок строки на пересечении в матрице.</td>
+                            </tr>
+                            <tr>
+                                <td><code>{_col_header}</code></td>
+                                <td><code>matrix</code></td>
+                                <td>Заголовок столбца на пересечении в матрице.</td>
+                            </tr>
+                            <tr>
+                                <td><code>{_value}</code></td>
+                                <td><code>matrix</code></td>
+                                <td>Значение на пересечении строки и столбца.</td>
+                            </tr>
+                            <tr>
+                                <td><code>{_key}</code></td>
+                                <td><code>kv</code></td>
+                                <td>Ключ (параметр из первой колонки).</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Вкладка 4: Готовые примеры -->
+                <div class="guide-content-panel hidden" id="tab-examples">
+                    <div class="guide-example-box">
+                        <div class="example-title">Пример 1: Вопросы и ответы с категорией</div>
+                        <pre class="code-snippet">@mode row
+@skip_empty
+@enumerate
+Вопрос: {Вопрос}
+Ответ: {Ответ} (Категория: {Категория})</pre>
+                        <button type="button" class="mini-btn copy-rule-template" data-template="@mode row&#10;@skip_empty&#10;@enumerate&#10;Вопрос: {Вопрос}&#10;Ответ: {Ответ} (Категория: {Категория})">📋 Вставить этот шаблон</button>
+                    </div>
+
+                    <div class="guide-example-box">
+                        <div class="example-title">Пример 2: Сложный прайс с объединенными категориями</div>
+                        <pre class="code-snippet">@mode group
+@group_by 0
+@merge_repeated
+@header_rows 2
+Товар: {1} | Базовая цена: {2} | Премиум: {4}</pre>
+                        <button type="button" class="mini-btn copy-rule-template" data-template="@mode group&#10;@group_by 0&#10;@merge_repeated&#10;@header_rows 2&#10;Товар: {1} | Базовая цена: {2} | Премиум: {4}">📋 Вставить этот шаблон</button>
+                    </div>
+
+                    <div class="guide-example-box">
+                        <div class="example-title">Пример 3: Матрица доступов и ролей сотрудников</div>
+                        <pre class="code-snippet">@mode matrix
+@header_cols 1
+Роль: {_row_header} -> Доступ к {_col_header}: {_value}</pre>
+                        <button type="button" class="mini-btn copy-rule-template" data-template="@mode matrix&#10;@header_cols 1&#10;Роль: {_row_header} -> Доступ к {_col_header}: {_value}">📋 Вставить этот шаблон</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-card-footer">
+                <button class="glass-btn secondary" id="close-rules-modal-bottom">
+                    Закрыть справочник
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ═══ Спиннер загрузки ═══ -->
+    <div class="loading-overlay hidden" id="loading">
+        <div class="loader-backdrop"></div>
+        <div class="loader-box">
+            <div class="cyber-spinner">
+                <div class="spinner-core"></div>
+            </div>
+            <span id="loading-text">Обработка...</span>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
