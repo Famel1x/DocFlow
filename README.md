@@ -4,6 +4,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![GigaChat](https://img.shields.io/badge/GigaChat-SDK%20v2-green.svg?logo=sberbank&logoColor=white)](https://developers.sber.ru)
 [![OCR](https://img.shields.io/badge/OCR-RapidOCR%20%7C%20EasyOCR%20%7C%20Tesseract-orange.svg)](https://github.com/RapidAI/RapidOCR)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)](#)
 
 **DocuFlow AI** — современная интеллектуальная платформа для извлечения таблиц и текстовых блоков из документов любых форматов (**PDF**, **DOCX**, **PPTX**, **XLSX**, включая отсканированные страницы через нейросетевой **OCR**), их интерактивной корректировки в веб-интерфейсе, декларативного преобразования с помощью гибкого движка правил и последующей генерации структурированных баз знаний и FAQ с помощью **LLM GigaChat** от Сбера.
@@ -310,6 +311,10 @@ python create_complex_test_files.py
 
 ---
 
-## 📜 Лицензия
+## 📜 Лицензия и стандарты сообщества
 
-Проект распространяется для автоматизации процессов подготовки баз знаний / FAQ. Все права защищены.
+Проект распространяется под открытой лицензией [MIT License](LICENSE).
+
+* 🛡️ **Политика безопасности:** [SECURITY.md](SECURITY.md)
+* 🤝 **Правила участия в разработке:** [CONTRIBUTING.md](CONTRIBUTING.md)
+* 📜 **Кодекс поведения участников:** [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
